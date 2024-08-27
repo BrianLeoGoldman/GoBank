@@ -1,0 +1,38 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go workspace file
+go.work
+
+# Go workspace command files
+go.work.sum
+
+# IDE specific files
+.idea/
+*.iml
+*.iws
+
+# Logs
+logs/
+*.log
+
+# Build output
+bin/
+build/
+dist/
+
+# IDE-specific cache and logs
+out/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Makefile
+Makefile
