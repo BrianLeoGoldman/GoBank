@@ -57,7 +57,8 @@ func (s *APIServer) Run() {
 	// handleAccount is converted to a http.HandlerFunc using the makeHTTPHandleFunc function
 	// this allows the handleAccount method to handle requests to the /account route
 	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
-	log.Println("JSON API server running on port: ", s.listenAddress)
+	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleGetAccount))
+	log.Println("JSON API server running on port ", s.listenAddress)
 	http.ListenAndServe(s.listenAddress, router)
 }
 
@@ -77,7 +78,11 @@ func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error 
 }
 
 func (s *APIServer) handleGetAccount(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	id := mux.Vars(r)["id"]
+	// TODO: query database to get account with correct id
+	fmt.Printf("\nGetting account with id %v", id)
+	account := NewAccount("Jordan", "Westminster")
+	return WriteJSON(w, http.StatusOK, account)
 }
 
 func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) error {
