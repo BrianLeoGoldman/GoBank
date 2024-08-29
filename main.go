@@ -1,9 +1,17 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 func main() {
 	fmt.Println("Welcome to gobank!")
-	server := NewAPIServer(":3000")
+	storage, err := NewPostgreSQLStorage()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%+v\n", storage)
+	server := NewAPIServer(":3000", storage)
 	server.Run()
 }

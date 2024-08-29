@@ -12,8 +12,8 @@ import (
 
 // WriteJSON sends JSON responses to an HTTP client, commonly used in web applications to respond with structured data
 func WriteJSON(w http.ResponseWriter, status int, v any) error {
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)
-	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(v)
 }
 
@@ -39,13 +39,14 @@ func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
 // APIServer represents an API server and contains information and functionality related to that server
 type APIServer struct {
 	listenAddress string
-	// TODO: add PostgreSQL database
+	storage       Storage
 }
 
 // NewAPIServer returns a pointer to an APIServer.
-func NewAPIServer(listenAddress string) *APIServer {
+func NewAPIServer(listenAddress string, storage Storage) *APIServer {
 	return &APIServer{
 		listenAddress: listenAddress,
+		storage:       storage,
 	}
 }
 
