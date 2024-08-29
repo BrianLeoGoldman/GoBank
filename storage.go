@@ -17,31 +17,49 @@ type PostgreSQLStorage struct {
 }
 
 func NewPostgreSQLStorage() (*PostgreSQLStorage, error) {
-	connStr := "user=postgres dbname=postgres password=gobank123 sslmode=disable"
-	db, error := sql.Open("postgres", connStr)
-	if error != nil {
-		return nil, error
+	connStr := "user=postgres dbname=postgres password=pass12345 sslmode=disable"
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return nil, err
 	}
-	if error == db.Ping() {
-		return nil, error
+	if err := db.Ping(); err != nil {
+		return nil, err
 	}
+
 	return &PostgreSQLStorage{
 		db: db,
 	}, nil
 }
 
-func (*PostgreSQLStorage) GetAccountByID(int) (*Account, error) {
+func (s *PostgreSQLStorage) Init() error {
+	return s.createAccountTable()
+}
+
+func (s *PostgreSQLStorage) createAccountTable() error {
+	query := `CREATE TABLE IF NOT EXISTS account (
+		id serial PRIMARY KEY,
+		first_name VARCHAR(50),
+		last_name VARCHAR(50),
+		number serial,
+		balance serial,
+		created_at TIMESTAMP
+	)`
+	_, err := s.db.Exec(query)
+	return err
+}
+
+func (s *PostgreSQLStorage) GetAccountByID(int) (*Account, error) {
 	return nil, nil
 }
 
-func (*PostgreSQLStorage) CreateAccount(*Account) error {
+func (s *PostgreSQLStorage) CreateAccount(*Account) error {
 	return nil
 }
 
-func (*PostgreSQLStorage) DeleteAccount(int) error {
+func (s *PostgreSQLStorage) DeleteAccount(int) error {
 	return nil
 }
 
-func (*PostgreSQLStorage) UpdateAccount(*Account) error {
+func (s *PostgreSQLStorage) UpdateAccount(*Account) error {
 	return nil
 }
