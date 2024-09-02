@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/lib/pq"
 )
 
@@ -54,7 +55,7 @@ func (s *PostgreSQLStorage) GetAccounts() ([]*Account, error) {
 	if err != nil {
 		return nil, err
 	}
-	accounts := []*Account{}
+	var accounts []*Account
 	for rows.Next() {
 		account := new(Account)
 		if err := rows.Scan(
@@ -72,8 +73,27 @@ func (s *PostgreSQLStorage) GetAccounts() ([]*Account, error) {
 	return accounts, nil
 }
 
-func (s *PostgreSQLStorage) GetAccountByID(int) (*Account, error) {
-	return nil, nil
+func (s *PostgreSQLStorage) GetAccountByID(id int) (*Account, error) {
+	query := `SELECT id, first_name, last_name, number, balance, created_at FROM account WHERE id = $1`
+	// Crear un objeto Account para almacenar la cuenta encontrada
+	account := &Account{}
+	// Ejecutar la consulta y escanear el resultado
+	err := s.db.QueryRow(query, id).Scan(
+		&account.ID,
+		&account.Firstname,
+		&account.Lastname,
+		&account.Number,
+		&account.Balance,
+		&account.CreatedAt,
+	)
+	if err != nil {
+		// Manejo de errores, por ejemplo, si no se encuentra la cuenta
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("no se encontró ninguna cuenta con el ID %d", id)
+		}
+		return nil, err
+	}
+	return account, nil
 }
 
 func (s *PostgreSQLStorage) CreateAccount(account *Account) (*Account, error) {
@@ -81,10 +101,8 @@ func (s *PostgreSQLStorage) CreateAccount(account *Account) (*Account, error) {
         (first_name, last_name, number, balance, created_at)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING id, first_name, last_name, number, balance, created_at`
-
 	// Crear un objeto Account para almacenar la cuenta creada
 	createdAccount := &Account{}
-
 	// Ejecutar la consulta y escanear el resultado
 	err := s.db.QueryRow(query,
 		account.Firstname,
@@ -100,11 +118,9 @@ func (s *PostgreSQLStorage) CreateAccount(account *Account) (*Account, error) {
 		&createdAccount.Balance,
 		&createdAccount.CreatedAt,
 	)
-
 	if err != nil {
 		return nil, err
 	}
-
 	return createdAccount, nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 // Here is the API server and handlers
@@ -87,10 +88,17 @@ func (s *APIServer) handleGetAccount(w http.ResponseWriter, r *http.Request) err
 }
 
 func (s *APIServer) handleGetAccountByID(w http.ResponseWriter, r *http.Request) error {
-	id := mux.Vars(r)["id"]
-	// TODO: query database to get account with correct id
+	idString := mux.Vars(r)["id"]
+	id, err := strconv.Atoi(idString)
+	if err != nil {
+		fmt.Println("ID argument is not valid:", idString)
+		return err
+	}
 	fmt.Printf("\nGetting account with id %v", id)
-	account := NewAccount("Jordan", "Westminster")
+	account, err := s.storage.GetAccountByID(id)
+	if err != nil {
+		return err
+	}
 	return WriteJSON(w, http.StatusOK, account)
 }
 
