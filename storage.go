@@ -75,9 +75,7 @@ func (s *PostgreSQLStorage) GetAccounts() ([]*Account, error) {
 
 func (s *PostgreSQLStorage) GetAccountByID(id int) (*Account, error) {
 	query := `SELECT id, first_name, last_name, number, balance, created_at FROM account WHERE id = $1`
-	// Crear un objeto Account para almacenar la cuenta encontrada
 	account := &Account{}
-	// Ejecutar la consulta y escanear el resultado
 	err := s.db.QueryRow(query, id).Scan(
 		&account.ID,
 		&account.Firstname,
@@ -87,7 +85,6 @@ func (s *PostgreSQLStorage) GetAccountByID(id int) (*Account, error) {
 		&account.CreatedAt,
 	)
 	if err != nil {
-		// Manejo de errores, por ejemplo, si no se encuentra la cuenta
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("no se encontró ninguna cuenta con el ID %d", id)
 		}
@@ -101,9 +98,7 @@ func (s *PostgreSQLStorage) CreateAccount(account *Account) (*Account, error) {
         (first_name, last_name, number, balance, created_at)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING id, first_name, last_name, number, balance, created_at`
-	// Crear un objeto Account para almacenar la cuenta creada
 	createdAccount := &Account{}
-	// Ejecutar la consulta y escanear el resultado
 	err := s.db.QueryRow(query,
 		account.Firstname,
 		account.Lastname,
@@ -124,8 +119,10 @@ func (s *PostgreSQLStorage) CreateAccount(account *Account) (*Account, error) {
 	return createdAccount, nil
 }
 
-func (s *PostgreSQLStorage) DeleteAccount(int) error {
-	return nil
+func (s *PostgreSQLStorage) DeleteAccount(id int) error {
+	query := `DELETE FROM account WHERE id = $1`
+	_, err := s.db.Exec(query, id)
+	return err
 }
 
 func (s *PostgreSQLStorage) UpdateAccount(*Account) error {

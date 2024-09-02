@@ -59,7 +59,7 @@ func (s *APIServer) Run() {
 	// handleAccount is converted to a http.HandlerFunc using the makeHTTPHandleFunc function
 	// this allows the handleAccount method to handle requests to the /account route
 	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
-	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleGetAccountByID))
+	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleAccountByID))
 	log.Println("JSON API server running on port ", s.listenAddress)
 	http.ListenAndServe(s.listenAddress, router)
 }
@@ -68,10 +68,17 @@ func (s *APIServer) Run() {
 func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error {
 	// With the mux router we cannot specify if the request is GET, POST, PUT or DELETE
 	if r.Method == "GET" {
-		return s.handleGetAccount(w, r)
+		return s.handleGetAccounts(w, r)
 	}
 	if r.Method == "POST" {
 		return s.handleCreateAccount(w, r)
+	}
+	return fmt.Errorf("method not allowed: %s", r.Method)
+}
+
+func (s *APIServer) handleAccountByID(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "GET" {
+		return s.handleGetAccountByID(w, r)
 	}
 	if r.Method == "DELETE" {
 		return s.handleDeleteAccount(w, r)
@@ -79,7 +86,7 @@ func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error 
 	return fmt.Errorf("method not allowed: %s", r.Method)
 }
 
-func (s *APIServer) handleGetAccount(w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleGetAccounts(w http.ResponseWriter, r *http.Request) error {
 	accounts, err := s.storage.GetAccounts()
 	if err != nil {
 		return err
@@ -116,7 +123,17 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	idString := mux.Vars(r)["id"]
+	id, err := strconv.Atoi(idString)
+	if err != nil {
+		fmt.Println("ID argument is not valid:", idString)
+		return err
+	}
+	err = s.storage.DeleteAccount(id)
+	if err != nil {
+		return err
+	}
+	return WriteJSON(w, http.StatusOK, "Deleted account with id "+idString)
 }
 
 func (s *APIServer) handleTransfer(w http.ResponseWriter, r *http.Request) error {
