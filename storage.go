@@ -2,13 +2,13 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	_ "github.com/lib/pq"
 )
 
 type Storage interface {
+	GetAccounts() ([]*Account, error)
 	GetAccountByID(int) (*Account, error)
-	CreateAccount(*Account) error
+	CreateAccount(*Account) (*Account, error)
 	DeleteAccount(int) error
 	UpdateAccount(*Account) error
 }
@@ -49,26 +49,63 @@ func (s *PostgreSQLStorage) createAccountTable() error {
 	return err
 }
 
+func (s *PostgreSQLStorage) GetAccounts() ([]*Account, error) {
+	rows, err := s.db.Query("SELECT * FROM account")
+	if err != nil {
+		return nil, err
+	}
+	accounts := []*Account{}
+	for rows.Next() {
+		account := new(Account)
+		if err := rows.Scan(
+			&account.ID,
+			&account.Firstname,
+			&account.Lastname,
+			&account.Number,
+			&account.Balance,
+			&account.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		accounts = append(accounts, account)
+	}
+	return accounts, nil
+}
+
 func (s *PostgreSQLStorage) GetAccountByID(int) (*Account, error) {
 	return nil, nil
 }
 
-func (s *PostgreSQLStorage) CreateAccount(account *Account) error {
+func (s *PostgreSQLStorage) CreateAccount(account *Account) (*Account, error) {
 	query := `INSERT INTO account
-		(first_name, last_name, number, balance, created_at)
-		values
-		($1, $2, $3, $4, $5)`
-	resp, err := s.db.Query(query,
+        (first_name, last_name, number, balance, created_at)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id, first_name, last_name, number, balance, created_at`
+
+	// Crear un objeto Account para almacenar la cuenta creada
+	createdAccount := &Account{}
+
+	// Ejecutar la consulta y escanear el resultado
+	err := s.db.QueryRow(query,
 		account.Firstname,
 		account.Lastname,
 		account.Number,
 		account.Balance,
 		account.CreatedAt,
+	).Scan(
+		&createdAccount.ID,
+		&createdAccount.Firstname,
+		&createdAccount.Lastname,
+		&createdAccount.Number,
+		&createdAccount.Balance,
+		&createdAccount.CreatedAt,
 	)
+
 	if err != nil {
-		return err
+		return nil, err
 	}
-	fmt.Printf("%+v\n", resp)
+
+	return createdAccount, nil
 }
 
 func (s *PostgreSQLStorage) DeleteAccount(int) error {

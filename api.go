@@ -58,7 +58,7 @@ func (s *APIServer) Run() {
 	// handleAccount is converted to a http.HandlerFunc using the makeHTTPHandleFunc function
 	// this allows the handleAccount method to handle requests to the /account route
 	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
-	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleGetAccount))
+	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleGetAccountByID))
 	log.Println("JSON API server running on port ", s.listenAddress)
 	http.ListenAndServe(s.listenAddress, router)
 }
@@ -79,6 +79,14 @@ func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error 
 }
 
 func (s *APIServer) handleGetAccount(w http.ResponseWriter, r *http.Request) error {
+	accounts, err := s.storage.GetAccounts()
+	if err != nil {
+		return err
+	}
+	return WriteJSON(w, http.StatusOK, accounts)
+}
+
+func (s *APIServer) handleGetAccountByID(w http.ResponseWriter, r *http.Request) error {
 	id := mux.Vars(r)["id"]
 	// TODO: query database to get account with correct id
 	fmt.Printf("\nGetting account with id %v", id)
@@ -92,10 +100,11 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 	account := NewAccount(createAccountReq.Firstname, createAccountReq.Lastname)
-	if err := s.storage.CreateAccount(account); err != nil {
+	savedAccount, err := s.storage.CreateAccount(account)
+	if err != nil {
 		return err
 	}
-	return WriteJSON(w, http.StatusCreated, account)
+	return WriteJSON(w, http.StatusCreated, savedAccount)
 }
 
 func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) error {
